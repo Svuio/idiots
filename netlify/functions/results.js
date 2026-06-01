@@ -1,75 +1,93 @@
-const { getStore } = require("@netlify/blobs");
+import { getStore } from "@netlify/blobs";
 
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "colors2026";
 const STORE_NAME = "disc-color-check-results";
-const KEY = "results.json";
+const RESULTS_KEY = "results";
 
 const headers = {
   "Content-Type": "application/json; charset=utf-8",
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET,POST,DELETE,OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
 };
 
-function response(statusCode, body) {
-  return { statusCode, headers, body: JSON.stringify(body) };
+function json(body, status = 200) {
+  return new Response(JSON.stringify(body), { status, headers });
+}
+
+function normalizeRecord(input) {
+  const now = new Date().toISOString();
+  const safe = input && typeof input === "object" ? input : {};
+
+  return {
+    id: safe.id || `${Date.now()}-${crypto.randomUUID?.() || Math.random().toString(16).slice(2)}`,
+    name: String(safe.name || "").trim() || "Без име",
+    primary: safe.primary || "D",
+    secondary: safe.secondary || "I",
+    score: safe.score || { D: 0, I: 0, S: 0, C: 0 },
+    submittedAt: safe.submittedAt || now,
+  };
 }
 
 async function readResults(store) {
-  const raw = await store.get(KEY, { consistency: "strong" });
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+  const data = await store.get(RESULTS_KEY, {
+    type: "json",
+    consistency: "strong",
+  });
+
+  return Array.isArray(data) ? data : [];
 }
 
 async function writeResults(store, results) {
-  await store.set(KEY, JSON.stringify(results));
+  await store.setJSON(RESULTS_KEY, results, {
+    consistency: "strong",
+  });
 }
 
-exports.handler = async (event) => {
-  if (event.httpMethod === "OPTIONS") return { statusCode: 204, headers, body: "" };
-
-  const store = getStore({ name: STORE_NAME, consistency: "strong" });
-
+export default async (request) => {
   try {
-    if (event.httpMethod === "POST") {
-      const record = JSON.parse(event.body || "{}");
-      if (!record.name || !record.primary || !record.score) return response(400, { error: "Invalid record" });
-      const safeRecord = { ...record, id: record.id || `${Date.now()}-${Math.random().toString(16).slice(2)}` };
+    const store = getStore({
+      name: STORE_NAME,
+      consistency: "strong",
+    });
+
+    if (request.method === "GET") {
       const results = await readResults(store);
-      results.unshift(safeRecord);
+      return json({ results });
+    }
+
+    if (request.method === "POST") {
+      const body = await request.json().catch(() => ({}));
+      const record = normalizeRecord(body);
+      const current = await readResults(store);
+      const results = [record, ...current];
       await writeResults(store, results);
-      return response(200, { ok: true, record: safeRecord });
+      return json({ record, results });
     }
 
-    const body = event.body ? JSON.parse(event.body) : {};
-    const password = event.queryStringParameters?.adminPassword || body.adminPassword;
-    if (password !== ADMIN_PASSWORD) return response(401, { error: "Unauthorized" });
+    if (request.method === "DELETE") {
+      const url = new URL(request.url);
 
-    if (event.httpMethod === "GET") {
-      const results = await readResults(store);
-      return response(200, results);
-    }
-
-    if (event.httpMethod === "DELETE") {
-      let results = await readResults(store);
-      if (body.all) {
-        results = [];
-      } else if (body.id) {
-        results = results.filter((item) => item.id !== body.id);
-      } else if (Number.isInteger(body.index)) {
-        results = results.filter((_, index) => index !== body.index);
+      if (url.searchParams.get("all") === "true") {
+        await writeResults(store, []);
+        return json({ results: [] });
       }
+
+      const id = url.searchParams.get("id");
+      const indexValue = url.searchParams.get("index");
+      const index = indexValue === null ? -1 : Number(indexValue);
+      const current = await readResults(store);
+
+      const results = current.filter((record, i) => {
+        if (id) return record.id !== id;
+        return i !== index;
+      });
+
       await writeResults(store, results);
-      return response(200, { ok: true, results });
+      return json({ results });
     }
 
-    return response(405, { error: "Method not allowed" });
+    return json({ error: "Method not allowed" }, 405);
   } catch (error) {
-    return response(500, { error: error.message || "Server error" });
+    return json({
+      error: "Results function failed",
+      message: error?.message || String(error),
+    }, 500);
   }
 };
