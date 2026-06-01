@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 
-const STORAGE_KEY = "disc_color_check_results_stable_v3";
+const STORAGE_KEY = "disc_color_check_results_single_choice_v1";
 const ADMIN_SESSION_KEY = "disc_color_check_admin_session_stable_v3";
 const ADMIN_USERNAME = "admin";
 const ADMIN_PASSWORD = "colors2026";
@@ -9,7 +9,7 @@ const RESULTS_API = "/.netlify/functions/results";
 const COLORS = {
   D: { label: "ЧЕРВЕН", short: "Червен", group: "Червена група", emoji: "🔴", soft: "bg-red-50", text: "text-red-700", ring: "ring-red-300", border: "border-red-200" },
   I: { label: "ЖЪЛТ", short: "Жълт", group: "Жълта група", emoji: "🟡", soft: "bg-yellow-50", text: "text-yellow-700", ring: "ring-yellow-300", border: "border-yellow-200" },
-  S: { label: "ЗЕЛЕН", short: "Зелен", group: "Зелена група", emoji: "🟢", soft: "bg-green-50", text: "text-green-700", ring: "ring-green-300", border: "border-green-200" },
+  S: { label: "ЗЕЛЕН", short: "Зелен", group: "Зелена група", emoji: "🟢", soft: "text-green-700", ring: "ring-green-300", border: "border-green-200", soft: "bg-green-50" },
   C: { label: "СИН", short: "Син", group: "Синя група", emoji: "🔵", soft: "bg-blue-50", text: "text-blue-700", ring: "ring-blue-300", border: "border-blue-200" },
 };
 
@@ -96,6 +96,30 @@ const ITEMS = RAW_ITEMS.map(([scenario, texts], idx) => ({
   options: ["D", "I", "S", "C"].map((type, i) => ({ id: `${idx + 1}${type}`, type, text: texts[i] })),
 }));
 
+const TIE_TEXTS = {
+  D: ["да взема решение и да придвижа групата напред", "да поема посока, дори да нямаме всички детайли", "да сложа ясен приоритет и следващ ход"],
+  I: ["да вкарам енергия и да отворя повече идеи", "да спечеля хората за по-смел вариант", "да направя разговора по-жив и ангажиращ"],
+  S: ["да запазя спокойствието и да включа всички", "да потърся обща точка, преди да натискаме напред", "да намаля напрежението и да чуя тихите гласове"],
+  C: ["да проверя фактите и критериите", "да подредя информацията, преди да решим", "да видя риска и слабите места в плана"],
+};
+
+const TIE_SCENARIOS = [
+  "Когато трябва да помогна на екипа да излезе от застой, по-естествено ми е…",
+  "Когато има спор как да продължим, първият ми импулс е…",
+  "Когато времето е малко, най-много ми идва да…",
+];
+
+function getTieQuestions(pair) {
+  const [a, b] = pair;
+  return TIE_SCENARIOS.map((scenario, index) => ({
+    scenario,
+    options: [
+      { id: `tie${index}${a}`, type: a, text: TIE_TEXTS[a][index] },
+      { id: `tie${index}${b}`, type: b, text: TIE_TEXTS[b][index] },
+    ],
+  }));
+}
+
 function Button({ children, onClick, disabled, variant = "primary", className = "" }) {
   const styles = variant === "danger"
     ? "bg-red-600 text-white hover:bg-red-700 disabled:bg-red-200"
@@ -130,15 +154,23 @@ function Info({ title, text }) {
   return <div className="rounded-2xl bg-slate-50 p-4"><div className="mb-2 text-sm font-semibold text-slate-900">{title}</div><p className="text-sm leading-relaxed text-slate-600">{text}</p></div>;
 }
 
-function scoreAnswers(answers) {
+function scoreAnswers(answers, tieAnswers = {}) {
   const score = { D: 0, I: 0, S: 0, C: 0 };
-  Object.values(answers).forEach((answer) => {
-    if (!answer?.most || !answer?.least) return;
-    score[answer.most.type] += 2;
-    score[answer.least.type] -= 1;
+  Object.values(answers).forEach((option) => {
+    if (option?.type) score[option.type] += 1;
+  });
+  Object.values(tieAnswers).forEach((option) => {
+    if (option?.type) score[option.type] += 1;
   });
   const ranked = Object.entries(score).sort((a, b) => b[1] - a[1]);
-  return { score, primary: ranked[0]?.[0] || "D", secondary: ranked[1]?.[0] || "I" };
+  return { score, primary: ranked[0]?.[0] || "D", secondary: ranked[1]?.[0] || "I", ranked };
+}
+
+function shouldUseTieBreaker(result) {
+  const top = result.ranked?.[0];
+  const second = result.ranked?.[1];
+  if (!top || !second) return false;
+  return top[0] !== second[0] && top[1] - second[1] <= 2;
 }
 
 function loadResults() {
@@ -164,11 +196,7 @@ async function fetchResults() {
 
 async function saveResult(record) {
   try {
-    const response = await fetch(RESULTS_API, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(record),
-    });
+    const response = await fetch(RESULTS_API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(record) });
     if (!response.ok) throw new Error("Results API unavailable");
     const data = await response.json();
     const results = data.results || [data.record, ...loadResults()].filter(Boolean);
@@ -213,7 +241,7 @@ async function clearStoredResults() {
 function confidenceFor(score) {
   const values = Object.values(score || { D: 0, I: 0, S: 0, C: 0 }).sort((a, b) => b - a);
   const gap = values[0] - (values[1] ?? values[0]);
-  if (gap >= 5) return "ясно изразен";
+  if (gap >= 4) return "ясно изразен";
   if (gap >= 2) return "умерено изразен";
   return "смесен/балансиран";
 }
@@ -280,7 +308,7 @@ function ColorDots() {
 }
 
 function TestIntro({ name, setName, start, openAdmin }) {
-  return <Page center><Card className="relative w-full max-w-4xl overflow-hidden p-8 md:p-12"><div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-red-100 blur-2xl" /><div className="absolute -bottom-24 left-20 h-72 w-72 rounded-full bg-blue-100 blur-2xl" /><div className="relative"><div className="flex items-center justify-between gap-4"><div className="rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white">Team style check</div><Button variant="secondary" onClick={openAdmin}>Admin</Button></div><div className="mt-10 grid gap-8 md:grid-cols-[1.2fr_0.8fr] md:items-end"><div><ColorDots /><h1 className="mt-6 text-5xl font-black tracking-tight text-slate-950 md:text-7xl">Ами ако никой не е идиот?</h1><p className="mt-5 text-xl leading-relaxed text-slate-600">Понякога „идиот“ е просто човек с различен стил от нашия. Нека видим какъв е твоят.</p></div><div className="rounded-3xl bg-slate-950 p-5 text-white shadow-lg"><div className="text-sm uppercase tracking-[0.18em] text-slate-400">Как работи</div><div className="mt-4 space-y-3 text-sm text-slate-200"><div>1. Минаваш през 16 ситуации.</div><div>2. За всяка ситуация избираш точно две реакции: една „Това съм аз“ и една „Не е моето“.</div><div>3. Виждаш само своя цвят за играта.</div></div></div></div><div className="mt-8 grid gap-4 md:grid-cols-[1fr_auto]"><Input label="Име" value={name} onChange={setName} placeholder="например: Светослав" /><div className="flex items-end"><Button disabled={!name.trim()} onClick={start} className="w-full px-6 py-4 text-base md:w-auto">Продължи ›</Button></div></div><div className="mt-5 rounded-2xl bg-slate-100 p-4 text-sm text-slate-600">Няма правилни и грешни отговори. На всяка ситуация избери две различни реакции: една „Това съм аз“ и една „Не е моето“.</div></div></Card></Page>;
+  return <Page center><Card className="relative w-full max-w-4xl overflow-hidden p-8 md:p-12"><div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-red-100 blur-2xl" /><div className="absolute -bottom-24 left-20 h-72 w-72 rounded-full bg-blue-100 blur-2xl" /><div className="relative"><div className="flex items-center justify-between gap-4"><div className="rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white">Team style check</div><Button variant="secondary" onClick={openAdmin}>Admin</Button></div><div className="mt-10 grid gap-8 md:grid-cols-[1.2fr_0.8fr] md:items-end"><div><ColorDots /><h1 className="mt-6 text-5xl font-black tracking-tight text-slate-950 md:text-7xl">Ами ако никой не е идиот?</h1><p className="mt-5 text-xl leading-relaxed text-slate-600">Понякога „идиот“ е просто човек с различен стил от нашия. Нека видим какъв е твоят.</p></div><div className="rounded-3xl bg-slate-950 p-5 text-white shadow-lg"><div className="text-sm uppercase tracking-[0.18em] text-slate-400">Как работи</div><div className="mt-4 space-y-3 text-sm text-slate-200"><div>1. Минаваш през 16 ситуации.</div><div>2. За всяка ситуация избираш една реакция, която най-много прилича на теб.</div><div>3. Ако резултатът е близък, ще има още 3 бързи уточняващи ситуации.</div><div>4. Виждаш само своя цвят за играта.</div></div></div></div><div className="mt-8 grid gap-4 md:grid-cols-[1fr_auto]"><Input label="Име" value={name} onChange={setName} placeholder="например: Светослав" /><div className="flex items-end"><Button disabled={!name.trim()} onClick={start} className="w-full px-6 py-4 text-base md:w-auto">Продължи ›</Button></div></div><div className="mt-5 rounded-2xl bg-slate-100 p-4 text-sm text-slate-600">Няма правилни и грешни отговори. На всяка ситуация избери само една реакция — тази, която най-много прилича на теб.</div></div></Card></Page>;
 }
 
 function HowUsed({ onBack, onStart }) {
@@ -288,11 +316,20 @@ function HowUsed({ onBack, onStart }) {
 }
 
 function TestStep({ current, answers, choose, back, next, isLast }) {
-  const answer = answers[current] || { most: null, least: null };
+  const answer = answers[current] || null;
   const progress = Math.round(((current + 1) / ITEMS.length) * 100);
-  const canContinue = answer.most && answer.least;
+  const canContinue = Boolean(answer);
   const item = ITEMS[current];
-  return <Page center><Card className="w-full max-w-5xl p-6 md:p-10"><div className="mb-8"><div className="mb-3 flex items-center justify-between text-sm text-slate-500"><span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600">Ситуация {current + 1} от {ITEMS.length}</span><span>{progress}%</span></div><div className="h-3 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-slate-950 transition-all" style={{ width: `${progress}%` }} /></div></div><div className="mb-7 rounded-3xl bg-slate-950 p-6 text-white md:p-8"><div className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-slate-300">Екипна ситуация</div><h2 className="text-2xl font-semibold leading-tight md:text-4xl">{item.scenario}</h2><p className="mt-4 max-w-3xl text-sm leading-relaxed text-slate-300 md:text-base">За да продължиш, избери две различни реакции: една като „Това съм аз“ и една като „Не е моето“. Можеш да се връщаш назад — изборите ти се запазват.</p><div className="mt-4 inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-slate-300">Без ограничение във времето</div></div><div className="mb-4 grid gap-3 sm:grid-cols-2"><div className={`rounded-2xl border p-3 text-sm font-medium ${answer.most ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-500"}`}>{answer.most ? "✓ Избрано: Това съм аз" : "1. Избери една реакция: Това съм аз"}</div><div className={`rounded-2xl border p-3 text-sm font-medium ${answer.least ? "border-red-200 bg-red-50 text-red-700" : "border-slate-200 bg-white text-slate-500"}`}>{answer.least ? "✓ Избрано: Не е моето" : "2. Избери една реакция: Не е моето"}</div></div><div className="grid gap-4 md:grid-cols-2">{item.options.map((option) => { const isMost = answer.most?.id === option.id; const isLeast = answer.least?.id === option.id; const cardState = isMost ? "border-emerald-300 bg-emerald-50 text-emerald-950 shadow-md ring-4 ring-emerald-100" : isLeast ? "border-red-200 bg-red-50 text-red-800 shadow-sm ring-4 ring-red-50" : "border-slate-200 bg-white text-slate-900 hover:border-slate-400 hover:shadow-sm"; const labelState = isMost ? "bg-emerald-600 text-white" : "bg-red-100 text-red-700"; return <div key={option.id} className={`relative min-h-[190px] rounded-3xl border p-5 transition ${cardState}`}>{(isMost || isLeast) && <div className={`absolute right-4 top-4 rounded-full px-3 py-1 text-xs font-bold ${labelState}`}>{isMost ? "✓ Това съм аз" : "↘ Не е моето"}</div>}<div className="pr-20 text-lg font-semibold leading-relaxed md:text-xl">{option.text}</div><div className="absolute bottom-5 left-5 right-5 grid grid-cols-2 gap-3"><Button variant={isMost ? "success" : "secondary"} onClick={() => choose("most", option)}>Това съм аз</Button><Button variant={isLeast ? "reject" : "secondary"} onClick={() => choose("least", option)}>Не е моето</Button></div></div>; })}</div><div className="mt-8 flex flex-col-reverse justify-between gap-3 sm:flex-row"><Button variant="secondary" disabled={current === 0} onClick={back}>‹ Предходна ситуация</Button><Button disabled={!canContinue} onClick={next} className="px-6 py-3 text-base">{!canContinue ? "Избери и двете реакции" : isLast ? "Покажи цвета" : "Следваща ситуация ›"}</Button></div></Card></Page>;
+  return <Page center><Card className="w-full max-w-5xl p-6 md:p-10"><div className="mb-8"><div className="mb-3 flex items-center justify-between text-sm text-slate-500"><span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600">Ситуация {current + 1} от {ITEMS.length}</span><span>{progress}%</span></div><div className="h-3 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-slate-950 transition-all" style={{ width: `${progress}%` }} /></div></div><div className="mb-7 rounded-3xl bg-slate-950 p-6 text-white md:p-8"><div className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-slate-300">Екипна ситуация</div><h2 className="text-2xl font-semibold leading-tight md:text-4xl">{item.scenario}</h2><p className="mt-4 max-w-3xl text-sm leading-relaxed text-slate-300 md:text-base">Избери една реакция — тази, която най-много прилича на теб. Можеш да се връщаш назад — изборите ти се запазват.</p><div className="mt-4 inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-slate-300">Само един избор на ситуация</div></div><div className="grid gap-4 md:grid-cols-2">{item.options.map((option) => { const selected = answer?.id === option.id; const color = COLORS[option.type]; return <div key={option.id} onClick={() => choose(option)} className={`relative min-h-[160px] cursor-pointer rounded-3xl border p-5 transition ${selected ? `${color.soft} ${color.border} shadow-md ring-4 ${color.ring}` : "border-slate-200 bg-white text-slate-900 hover:border-slate-400 hover:shadow-sm"}`}>{selected && <div className={`absolute right-4 top-4 rounded-full bg-white px-3 py-1 text-xs font-bold ${color.text}`}>✓ Избрано</div>}<div className="pr-20 text-lg font-semibold leading-relaxed md:text-xl">{option.text}</div><div className="absolute bottom-5 left-5 right-5"><Button variant={selected ? "primary" : "secondary"} className="w-full" onClick={(event) => { event.stopPropagation(); choose(option); }}>{selected ? "Избрано" : "Това съм аз"}</Button></div></div>; })}</div><div className="mt-8 flex flex-col-reverse justify-between gap-3 sm:flex-row"><Button variant="secondary" disabled={current === 0} onClick={back}>‹ Предходна ситуация</Button><Button disabled={!canContinue} onClick={next} className="px-6 py-3 text-base">{!canContinue ? "Избери една реакция" : isLast ? "Продължи" : "Следваща ситуация ›"}</Button></div></Card></Page>;
+}
+
+function TieBreakerStep({ pair, current, answers, choose, back, next, isLast }) {
+  const questions = getTieQuestions(pair);
+  const item = questions[current];
+  const answer = answers[current] || null;
+  const canContinue = Boolean(answer);
+  const progress = Math.round(((current + 1) / questions.length) * 100);
+  return <Page center><Card className="w-full max-w-4xl p-6 md:p-10"><div className="mb-8"><div className="mb-3 flex items-center justify-between text-sm text-slate-500"><span className="rounded-full bg-amber-100 px-3 py-1 font-medium text-amber-800">Уточняване {current + 1} от {questions.length}</span><span>{progress}%</span></div><div className="h-3 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-amber-500 transition-all" style={{ width: `${progress}%` }} /></div></div><div className="mb-7 rounded-3xl bg-slate-950 p-6 text-white md:p-8"><div className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-amber-300">Близък резултат</div><h2 className="text-2xl font-semibold leading-tight md:text-4xl">{item.scenario}</h2><p className="mt-4 text-sm leading-relaxed text-slate-300 md:text-base">Имаш близък резултат между {COLORS[pair[0]].short} и {COLORS[pair[1]].short}. Избери кое е по-естествено за теб.</p></div><div className="grid gap-4 md:grid-cols-2">{item.options.map((option) => { const selected = answer?.id === option.id; const color = COLORS[option.type]; return <div key={option.id} onClick={() => choose(option)} className={`relative min-h-[170px] cursor-pointer rounded-3xl border p-5 transition ${selected ? `${color.soft} ${color.border} shadow-md ring-4 ${color.ring}` : "border-slate-200 bg-white text-slate-900 hover:border-slate-400 hover:shadow-sm"}`}><div className={`mb-4 inline-flex rounded-full px-3 py-1 text-sm font-semibold ${color.soft} ${color.text}`}>{color.emoji} {color.short}</div>{selected && <div className={`absolute right-4 top-4 rounded-full bg-white px-3 py-1 text-xs font-bold ${color.text}`}>✓ Избрано</div>}<div className="text-lg font-semibold leading-relaxed md:text-xl">{option.text}</div></div>; })}</div><div className="mt-8 flex flex-col-reverse justify-between gap-3 sm:flex-row"><Button variant="secondary" onClick={back}>{current === 0 ? "Назад към теста" : "‹ Предходно уточняване"}</Button><Button disabled={!canContinue} onClick={next} className="px-6 py-3 text-base">{!canContinue ? "Избери една реакция" : isLast ? "Покажи цвета" : "Следващо уточняване ›"}</Button></div></Card></Page>;
 }
 
 function Result({ name, result, restart, openAdmin }) {
@@ -316,26 +353,13 @@ function AdminView({ onBack, onLogout }) {
   const [showScores, setShowScores] = useState(true);
   const [expanded, setExpanded] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-
-  const refreshResults = async () => {
-    setIsLoading(true);
-    const next = await fetchResults();
-    setResults(next);
-    setIsLoading(false);
-  };
-
-  useEffect(() => {
-    refreshResults();
-  }, []);
+  const refreshResults = async () => { setIsLoading(true); const next = await fetchResults(); setResults(next); setIsLoading(false); };
+  useEffect(() => { refreshResults(); }, []);
   const totals = useMemo(() => results.reduce((acc, r) => ({ ...acc, [r.primary]: (acc[r.primary] || 0) + 1 }), { D: 0, I: 0, S: 0, C: 0 }), [results]);
   const radar = useMemo(() => groupRadar(results), [results]);
   const teams = useMemo(() => suggestTeams(results), [results]);
   const clear = async () => { if (window.confirm("Сигурен ли си, че искаш да изтриеш всички резултати?")) { const next = await clearStoredResults(); setResults(next); setExpanded({}); } };
-  const deleteResult = async (id, index) => {
-    const next = await deleteStoredResult(id, index);
-    setResults(next);
-    setExpanded((current) => { const copy = { ...current }; delete copy[id || String(index)]; return copy; });
-  };
+  const deleteResult = async (id, index) => { const next = await deleteStoredResult(id, index); setResults(next); setExpanded((current) => { const copy = { ...current }; delete copy[id || String(index)]; return copy; }); };
   return <Page><div className="mx-auto max-w-7xl space-y-6"><div className="flex flex-col justify-between gap-4 md:flex-row md:items-end"><div><div className="inline-flex rounded-full bg-slate-950 px-4 py-2 text-sm text-white">Facilitator Admin View</div><h1 className="mt-3 text-4xl font-semibold text-slate-950">Резултати</h1><p className="mt-2 text-slate-600">Видими само за фасилитатора. Участниците виждат единствено своя цвят.</p></div><div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={onBack}>Към теста</Button><Button variant="secondary" onClick={onLogout}>Изход</Button><Button variant="secondary" onClick={refreshResults}>{isLoading ? "Зареждам..." : "Обнови"}</Button><Button variant="secondary" onClick={() => setShowScores(!showScores)}>{showScores ? "Скрий точките" : "Покажи точките"}</Button><Button variant="secondary" disabled={!results.length} onClick={() => downloadCsv(results)}>CSV</Button><Button variant="danger" disabled={!results.length} onClick={clear}>Изчисти</Button></div></div><div className="grid gap-4 md:grid-cols-4">{Object.entries(COLORS).map(([key, color]) => <Card key={key} className={`p-5 ${color.soft} ${color.border}`}><div className="text-4xl">{color.emoji}</div><div className={`mt-3 text-lg font-bold ${color.text}`}>{color.short}</div><div className="mt-2 text-3xl font-semibold">{totals[key] || 0}</div></Card>)}</div>{results.length > 0 && <div className="grid gap-4 lg:grid-cols-2"><Card className="p-5"><div className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">Team risk radar</div><h2 className="mt-2 text-2xl font-semibold text-slate-950">Какво да наблюдаваш в групата</h2><div className="mt-4 space-y-3">{radar.map((item, index) => <div key={index} className="rounded-2xl bg-slate-50 p-4 text-sm leading-relaxed text-slate-700">{item}</div>)}</div></Card><Card className="p-5"><div className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">Color groups</div><h2 className="mt-2 text-2xl font-semibold text-slate-950">Предложение за групи по цвят</h2><p className="mt-2 text-sm text-slate-600">Всеки участник остава в групата на своя основен цвят. Показват се само цветовете, за които има подадени резултати.</p><div className="mt-4 grid gap-3">{teams.map((team) => <div key={team.name} className={`rounded-2xl border p-4 ${COLORS[team.color].soft} ${COLORS[team.color].border}`}><div className={`mb-2 font-semibold ${COLORS[team.color].text}`}>{team.name} · {team.members.length}</div><div className="flex flex-wrap gap-2">{team.members.map((member, i) => <span key={member.id || i} className="rounded-full bg-white px-3 py-1 text-sm text-slate-700">{member.name}</span>)}</div></div>)}</div></Card></div>}<Card className="overflow-hidden">{!results.length ? <div className="p-10 text-center text-slate-500">{isLoading ? "Зареждам резултатите..." : "Още няма попълнени резултати."}</div> : <AdminTable results={results} showScores={showScores} expanded={expanded} setExpanded={setExpanded} onDelete={deleteResult} />}</Card></div></Page>;
 }
 
@@ -348,15 +372,24 @@ export default function DiscColorCheckApp() {
   const [name, setName] = useState("");
   const [current, setCurrent] = useState(0);
   const [answers, setAnswers] = useState({});
-  const result = useMemo(() => scoreAnswers(answers), [answers]);
-  const restart = () => { setStep("intro"); setName(""); setCurrent(0); setAnswers({}); };
+  const [tiePair, setTiePair] = useState(null);
+  const [tieCurrent, setTieCurrent] = useState(0);
+  const [tieAnswers, setTieAnswers] = useState({});
+  const result = useMemo(() => scoreAnswers(answers, tieAnswers), [answers, tieAnswers]);
+
+  const restart = () => { setStep("intro"); setName(""); setCurrent(0); setAnswers({}); setTiePair(null); setTieCurrent(0); setTieAnswers({}); };
   const openAdmin = () => setStep(sessionStorage.getItem(ADMIN_SESSION_KEY) === "true" ? "admin" : "adminLogin");
-  const choose = (kind, option) => setAnswers((previous) => { const next = { ...(previous[current] || { most: null, least: null }) }; if (kind === "most") { next.most = option; if (next.least?.id === option.id) next.least = null; } else { next.least = option; if (next.most?.id === option.id) next.most = null; } return { ...previous, [current]: next }; });
-  const finish = async () => { await saveResult({ id: `${Date.now()}-${Math.random().toString(16).slice(2)}`, name: name.trim(), primary: result.primary, secondary: result.secondary, score: result.score, submittedAt: new Date().toISOString() }); setStep("result"); };
+  const choose = (option) => setAnswers((previous) => ({ ...previous, [current]: option }));
+  const chooseTie = (option) => setTieAnswers((previous) => ({ ...previous, [tieCurrent]: option }));
+  const saveAndShowResult = async () => { const finalResult = scoreAnswers(answers, tieAnswers); await saveResult({ id: `${Date.now()}-${Math.random().toString(16).slice(2)}`, name: name.trim(), primary: finalResult.primary, secondary: finalResult.secondary, score: finalResult.score, submittedAt: new Date().toISOString() }); setStep("result"); };
+  const finishBaseTest = () => { const baseResult = scoreAnswers(answers); if (shouldUseTieBreaker(baseResult)) { setTiePair([baseResult.ranked[0][0], baseResult.ranked[1][0]]); setTieCurrent(0); setTieAnswers({}); setStep("tie"); } else { saveAndShowResult(); } };
+  const finishTieBreaker = () => { if (tieCurrent === getTieQuestions(tiePair).length - 1) saveAndShowResult(); else setTieCurrent((value) => value + 1); };
+
   if (step === "adminLogin") return <AdminLogin onBack={restart} onSuccess={() => setStep("admin")} />;
   if (step === "admin") return <AdminView onBack={restart} onLogout={() => { sessionStorage.removeItem(ADMIN_SESSION_KEY); restart(); }} />;
   if (step === "intro") return <TestIntro name={name} setName={setName} start={() => setStep("howUsed")} openAdmin={openAdmin} />;
   if (step === "howUsed") return <HowUsed onBack={() => setStep("intro")} onStart={() => setStep("test")} />;
   if (step === "result") return <Result name={name} result={result} restart={restart} openAdmin={openAdmin} />;
-  return <TestStep current={current} answers={answers} choose={choose} back={() => setCurrent((value) => Math.max(0, value - 1))} next={() => current === ITEMS.length - 1 ? finish() : setCurrent((value) => value + 1)} isLast={current === ITEMS.length - 1} />;
+  if (step === "tie") return <TieBreakerStep pair={tiePair} current={tieCurrent} answers={tieAnswers} choose={chooseTie} back={() => { if (tieCurrent === 0) setStep("test"); else setTieCurrent((value) => value - 1); }} next={finishTieBreaker} isLast={tieCurrent === getTieQuestions(tiePair).length - 1} />;
+  return <TestStep current={current} answers={answers} choose={choose} back={() => setCurrent((value) => Math.max(0, value - 1))} next={() => current === ITEMS.length - 1 ? finishBaseTest() : setCurrent((value) => value + 1)} isLast={current === ITEMS.length - 1} />;
 }
