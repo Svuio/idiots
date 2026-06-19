@@ -395,13 +395,107 @@ function HowUsed({ onBack, onStart }) {
   return <Page center><Card className="w-full max-w-3xl p-8 md:p-10"><div className="inline-flex rounded-full bg-slate-950 px-4 py-2 text-sm text-white">Преди да започнеш</div><h1 className="mt-6 text-3xl font-semibold text-slate-950 md:text-4xl">Как ще използваме резултата?</h1><div className="mt-6 grid gap-4"><div className="rounded-2xl bg-slate-50 p-4 text-slate-700">Това не е психологическа диагноза и не е оценка на личността.</div><div className="rounded-2xl bg-slate-50 p-4 text-slate-700">Цветът е игрови ориентир за това как най-често реагираш в екипни ситуации.</div><div className="rounded-2xl bg-slate-50 p-4 text-slate-700">Ще го използваме по време на тиймбилдинга, за да видим как различните стилове влияят на комуникацията.</div></div><p className="mt-6 text-sm leading-relaxed text-slate-500">Отговаряй интуитивно. Не избирай идеалната реакция, а тази, която най-вероятно би направил/а в такъв момент.</p><div className="mt-8 flex flex-col-reverse justify-between gap-3 sm:flex-row"><Button variant="secondary" onClick={onBack}>Назад</Button><Button onClick={onStart} className="px-6 py-3 text-base">Започни ситуациите ›</Button></div></Card></Page>;
 }
 
+
 function TestStep({ current, answers, choose, back, next, isLast }) {
   const answer = answers[current] || null;
   const progress = Math.round(((current + 1) / ITEMS.length) * 100);
   const canContinue = Boolean(answer);
   const item = ITEMS[current];
-  return <Page center><Card className="w-full max-w-5xl p-6 md:p-10"><div className="mb-8"><div className="mb-3 flex items-center justify-between text-sm text-slate-500"><span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600">Сцена {current + 1} от {ITEMS.length}</span><span>{progress}%</span></div><div className="h-3 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-slate-950 transition-all" style={{ width: `${progress}%` }} /></div></div><div className="mb-7 rounded-3xl bg-slate-950 p-6 text-white md:p-8"><div className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-slate-300">Екипна ситуация</div><h2 className="text-2xl font-semibold leading-tight md:text-4xl">{item.scenario}</h2><p className="mt-4 max-w-3xl text-sm leading-relaxed text-slate-300 md:text-base">Представи си, че си в тази сцена. Не търси идеалния отговор. Избери първата реакция, която най-много прилича на теб в такъв момент. Можеш да се връщаш назад — изборите ти се запазват.</p><div className="mt-4 inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-slate-300">Само един избор на сцена</div></div><div className="grid gap-4 md:grid-cols-2">{item.options.map((option) => { const selected = answer?.id === option.id; const color = COLORS[option.type]; return <div key={option.id} onClick={() => choose(option)} className={`relative min-h-[160px] cursor-pointer rounded-3xl border p-5 transition ${selected ? "border-slate-400 bg-slate-100 text-slate-950 shadow-md ring-4 ring-slate-200" : "border-slate-200 bg-white text-slate-900 hover:border-slate-400 hover:shadow-sm"}`}>{selected && <div className="absolute right-4 top-4 rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-700">✓ Избрано</div>}<div className="pr-20 text-lg font-semibold leading-relaxed md:text-xl">{option.text}</div><div className="absolute bottom-5 left-5 right-5"><Button variant={selected ? "primary" : "secondary"} className="w-full" onClick={(event) => { event.stopPropagation(); choose(option); }}>{selected ? "Избрано" : "Това съм аз"}</Button></div></div>; })}</div><div className="mt-8 flex flex-col-reverse justify-between gap-3 sm:flex-row"><Button variant="secondary" disabled={current === 0} onClick={back}>‹ Предходна ситуация</Button><Button disabled={!canContinue} onClick={next} className="px-6 py-3 text-base">{!canContinue ? "Избери една реакция" : isLast ? "Продължи" : "Следваща ситуация ›"}</Button></div></Card></Page>;
+
+  return (
+    <Page center>
+      <Card className="w-full max-w-5xl border-slate-200/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] md:p-8">
+        <div className="mb-6">
+          <div className="mb-3 flex items-center justify-between text-sm text-slate-500">
+            <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600">
+              Сцена {current + 1} от {ITEMS.length}
+            </span>
+            <span>{progress}%</span>
+          </div>
+          <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
+            <div className="h-full rounded-full bg-slate-950 transition-all" style={{ width: `${progress}%` }} />
+          </div>
+        </div>
+
+        <div className="mb-6 rounded-[32px] border border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-5 text-white shadow-[0_18px_40px_rgba(15,23,42,0.28)] md:p-6">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-200">
+              Екипна ситуация
+            </div>
+            <div className="inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-slate-300">
+              Само един избор
+            </div>
+          </div>
+
+          <h2 className="max-w-4xl text-xl font-semibold leading-snug md:text-2xl lg:text-[30px]">
+            {item.scenario}
+          </h2>
+
+          <p className="mt-4 max-w-3xl text-sm leading-relaxed text-slate-300 md:text-[15px]">
+            Представи си, че си в тази сцена. Не търси идеалния отговор. Избери първата реакция, която най-много прилича на теб в такъв момент.
+          </p>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          {item.options.map((option, index) => {
+            const selected = answer?.id === option.id;
+            const label = String.fromCharCode(65 + index);
+
+            return (
+              <div
+                key={option.id}
+                onClick={() => choose(option)}
+                className={`group relative min-h-[148px] cursor-pointer rounded-[28px] border p-5 transition-all duration-200 ${
+                  selected
+                    ? "border-slate-400 bg-slate-100 text-slate-950 shadow-[0_12px_28px_rgba(15,23,42,0.10)] ring-4 ring-slate-200"
+                    : "border-slate-200 bg-white text-slate-900 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_10px_24px_rgba(15,23,42,0.08)]"
+                }`}
+              >
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-600">
+                    {label}
+                  </div>
+                  {selected && (
+                    <div className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-700 shadow-sm">
+                      ✓ Избрано
+                    </div>
+                  )}
+                </div>
+
+                <div className="pb-16 pr-3 text-base font-semibold leading-relaxed md:text-lg">
+                  {option.text}
+                </div>
+
+                <div className="absolute bottom-5 left-5 right-5">
+                  <Button
+                    variant={selected ? "primary" : "secondary"}
+                    className="w-full rounded-2xl py-2.5"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      choose(option);
+                    }}
+                  >
+                    {selected ? "Избрано" : "Избирам това"}
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-8 flex flex-col-reverse justify-between gap-3 sm:flex-row">
+          <Button variant="secondary" disabled={current === 0} onClick={back}>
+            ‹ Предходна ситуация
+          </Button>
+          <Button disabled={!canContinue} onClick={next} className="px-6 py-3 text-base">
+            {!canContinue ? "Избери една реакция" : isLast ? "Продължи" : "Следваща ситуация ›"}
+          </Button>
+        </div>
+      </Card>
+    </Page>
+  );
 }
+
 
 function TieBreakerStep({ pair, current, answers, choose, back, next, isLast }) {
   const questions = getTieQuestions(pair);
@@ -409,7 +503,86 @@ function TieBreakerStep({ pair, current, answers, choose, back, next, isLast }) 
   const answer = answers[current] || null;
   const canContinue = Boolean(answer);
   const progress = Math.round(((current + 1) / questions.length) * 100);
-  return <Page center><Card className="w-full max-w-4xl p-6 md:p-10"><div className="mb-8"><div className="mb-3 flex items-center justify-between text-sm text-slate-500"><span className="rounded-full bg-amber-100 px-3 py-1 font-medium text-amber-800">Уточняване {current + 1} от {questions.length}</span><span>{progress}%</span></div><div className="h-3 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-amber-500 transition-all" style={{ width: `${progress}%` }} /></div></div><div className="mb-7 rounded-3xl bg-slate-950 p-6 text-white md:p-8"><div className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-amber-300">Близък резултат</div><h2 className="text-2xl font-semibold leading-tight md:text-4xl">{item.scenario}</h2><p className="mt-4 text-sm leading-relaxed text-slate-300 md:text-base">Имаш близък резултат. Представи си сцената и избери кое е по-естествено за теб, без да мислиш прекалено дълго.</p></div><div className="grid gap-4 md:grid-cols-2">{item.options.map((option) => { const selected = answer?.id === option.id; const color = COLORS[option.type]; return <div key={option.id} onClick={() => choose(option)} className={`relative min-h-[170px] cursor-pointer rounded-3xl border p-5 transition ${selected ? "border-slate-400 bg-slate-100 text-slate-950 shadow-md ring-4 ring-slate-200" : "border-slate-200 bg-white text-slate-900 hover:border-slate-400 hover:shadow-sm"}`}><div className="mb-4 inline-flex rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600">Вариант</div>{selected && <div className="absolute right-4 top-4 rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-700">✓ Избрано</div>}<div className="text-lg font-semibold leading-relaxed md:text-xl">{option.text}</div></div>; })}</div><div className="mt-8 flex flex-col-reverse justify-between gap-3 sm:flex-row"><Button variant="secondary" onClick={back}>{current === 0 ? "Назад към теста" : "‹ Предходно уточняване"}</Button><Button disabled={!canContinue} onClick={next} className="px-6 py-3 text-base">{!canContinue ? "Избери една реакция" : isLast ? "Покажи цвета" : "Следващо уточняване ›"}</Button></div></Card></Page>;
+
+  return (
+    <Page center>
+      <Card className="w-full max-w-4xl border-slate-200/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] md:p-8">
+        <div className="mb-6">
+          <div className="mb-3 flex items-center justify-between text-sm text-slate-500">
+            <span className="rounded-full bg-amber-100 px-3 py-1 font-medium text-amber-800">
+              Уточняване {current + 1} от {questions.length}
+            </span>
+            <span>{progress}%</span>
+          </div>
+          <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
+            <div className="h-full rounded-full bg-amber-500 transition-all" style={{ width: `${progress}%` }} />
+          </div>
+        </div>
+
+        <div className="mb-6 rounded-[32px] border border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-5 text-white shadow-[0_18px_40px_rgba(15,23,42,0.28)] md:p-6">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="inline-flex rounded-full bg-amber-400/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-amber-200">
+              Близък резултат
+            </div>
+            <div className="inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-slate-300">
+              Избери по-естествения импулс
+            </div>
+          </div>
+
+          <h2 className="max-w-4xl text-xl font-semibold leading-snug md:text-2xl lg:text-[30px]">
+            {item.scenario}
+          </h2>
+
+          <p className="mt-4 max-w-3xl text-sm leading-relaxed text-slate-300 md:text-[15px]">
+            Имаш близък резултат. Избери кое е по-естествено за теб, без да мислиш прекалено дълго.
+          </p>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          {item.options.map((option, index) => {
+            const selected = answer?.id === option.id;
+            const label = index === 0 ? "A" : "B";
+
+            return (
+              <div
+                key={option.id}
+                onClick={() => choose(option)}
+                className={`group relative min-h-[150px] cursor-pointer rounded-[28px] border p-5 transition-all duration-200 ${
+                  selected
+                    ? "border-slate-400 bg-slate-100 text-slate-950 shadow-[0_12px_28px_rgba(15,23,42,0.10)] ring-4 ring-slate-200"
+                    : "border-slate-200 bg-white text-slate-900 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_10px_24px_rgba(15,23,42,0.08)]"
+                }`}
+              >
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-sm font-semibold text-slate-600">
+                    {label}
+                  </div>
+                  {selected && (
+                    <div className="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-700 shadow-sm">
+                      ✓ Избрано
+                    </div>
+                  )}
+                </div>
+
+                <div className="text-base font-semibold leading-relaxed md:text-lg">
+                  {option.text}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-8 flex flex-col-reverse justify-between gap-3 sm:flex-row">
+          <Button variant="secondary" onClick={back}>
+            {current === 0 ? "Назад към теста" : "‹ Предходно уточняване"}
+          </Button>
+          <Button disabled={!canContinue} onClick={next} className="px-6 py-3 text-base">
+            {!canContinue ? "Избери една реакция" : isLast ? "Покажи цвета" : "Следващо уточняване ›"}
+          </Button>
+        </div>
+      </Card>
+    </Page>
+  );
 }
 
 function Result({ name, result, restart, openAdmin }) {
