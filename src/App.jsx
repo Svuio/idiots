@@ -9,7 +9,7 @@ const RESULTS_API = "/.netlify/functions/results";
 const COLORS = {
   D: { label: "ЧЕРВЕН", short: "Червен", group: "Червена група", emoji: "🔴", soft: "bg-red-50", text: "text-red-700", ring: "ring-red-300", border: "border-red-200" },
   I: { label: "ЖЪЛТ", short: "Жълт", group: "Жълта група", emoji: "🟡", soft: "bg-yellow-50", text: "text-yellow-700", ring: "ring-yellow-300", border: "border-yellow-200" },
-  S: { label: "ЗЕЛЕН", short: "Зелен", group: "Зелена група", emoji: "🟢", soft: "text-green-700", ring: "ring-green-300", border: "border-green-200", soft: "bg-green-50" },
+  S: { label: "ЗЕЛЕН", short: "Зелен", group: "Зелена група", emoji: "🟢", soft: "bg-green-50", text: "text-green-700", ring: "ring-green-300", border: "border-green-200" },
   C: { label: "СИН", short: "Син", group: "Синя група", emoji: "🔵", soft: "bg-blue-50", text: "text-blue-700", ring: "ring-blue-300", border: "border-blue-200" },
 };
 
@@ -73,22 +73,102 @@ const RISK_RULES = {
 };
 
 const RAW_ITEMS = [
-  ["Когато започва нова групова задача, най-естествено за мен е…", ["да изясня целта и да подкарам хората към действие", "да вкарам енергия и да отворя пространство за идеи", "да се уверя, че всички са спокойни и включени", "да разбера условията, ограниченията и критериите"]],
-  ["Когато срещата започне да губи фокус, обикновено…", ["връщам разговора към решение и следваща стъпка", "опитвам да съживя разговора с идея или пример", "изчаквам подходящ момент, за да не прекъсна никого", "питам какъв точно проблем решаваме в момента"]],
-  ["Когато трябва бързо да се вземе решение, аз по-скоро…", ["избирам посока и поемам риска", "търся вариант, който ще запали хората", "гледам решението да не създаде излишно напрежение", "искам още малко информация, за да не сбъркаме"]],
-  ["Когато някой предложи много смела идея, първата ми реакция е…", ["да преценя дали може да ни даде предимство", "да се ентусиазирам и да я доразвия", "да видя дали останалите се чувстват комфортно", "да проверя дали идеята е реалистична и логична"]],
-  ["В напрегната ситуация най-често допринасям с…", ["решителност и натиск към резултат", "оптимизъм и способност да раздвижа групата", "спокойствие и стабилизиране на атмосферата", "анализ и подреждане на фактите"]],
-  ["Когато в екипа има конфликт, аз съм склонен да…", ["натисна да се изчисти позицията и да се реши", "сменя енергията и да върна хората към общата идея", "търся компромис и по-мек начин напред", "разделя фактите от емоциите и да търся причината"]],
-  ["Когато получа неясна задача, най-вероятно…", ["ще започна с най-важното и ще коригирам в движение", "ще поговоря с хората и ще събера идеи", "ще потърся човек, с когото да я изясним спокойно", "ще поискам конкретни критерии и допълнителен контекст"]],
-  ["Когато групата трябва да представи резултат, аз естествено…", ["държа представянето да е кратко, ясно и убедително", "мога да го направя живо, интересно и запомнящо се", "искам да се уверя, че всички имат принос", "проверявам дали структурата и данните са точни"]],
-  ["Когато правилата са твърде строги, аз обикновено…", ["ги предизвиквам, ако пречат на резултата", "търся по-свеж и гъвкав начин да ги използваме", "предпочитам да ги следвам, за да има спокойствие", "искам да разбера логиката зад тях"]],
-  ["Когато някой говори много и дълго, аз по-скоро…", ["го прекъсвам учтиво и връщам към темата", "се включвам, ако разговорът стане интересен", "изслушвам, дори да ми е трудно", "търся дали в казаното има реална стойност"]],
-  ["Когато има нова възможност, но и риск, аз първо гледам…", ["какво можем да спечелим", "какви нови идеи и връзки отваря", "как ще се отрази на хората", "какви са фактите и вероятните последици"]],
-  ["Когато работата стане хаотична, моята естествена реакция е…", ["да наложа посока и приоритет", "да върна енергията и да не позволявам паника", "да успокоя темпото и да подкрепя хората", "да структурирам информацията и зависимостите"]],
-  ["В групова игра най-много се забелязвам, когато…", ["има предизвикателство, победа или труден избор", "има нужда от настроение, хумор или импровизация", "някой трябва да държи групата заедно", "има нужда да се намери правилната логика"]],
-  ["Когато някой не е съгласен с мен, аз най-често…", ["защитавам позицията си директно", "опитвам да го спечеля с обяснение и енергия", "търся обща точка, за да не се изостря", "питам за аргументи и сравнявам фактите"]],
-  ["Когато трябва да помогна на екипа, най-силно ми идва да…", ["премахна пречката и да ускоря движението", "вдъхна увереност и да създам настроение", "подкрепя хората и да запазя добрия тон", "подредя плана и да намаля грешките"]],
-  ["Кое изречение най-много прилича на вътрешния ми режим на работа?", ["Да решим и да действаме.", "Да го направим живо и интересно.", "Да го направим спокойно и заедно.", "Да го направим правилно и обмислено."]],
+  ["Вие сте на тиймбилдинг и групата ви получава задача: за 15 минути трябва да измислите кратка концепция за нов продукт. Минават 7 минути, всички говорят, но още няма посока. Времето започва да притиска групата. Какво най-вероятно правиш първо?", [
+    "Казвам: „Нека изберем една посока и да започнем да я оформяме.“",
+    "Казвам: „Имам идея как да го направим по-забавно и различно.“",
+    "Питам: „Всички ли са ок с това накъде вървим?“",
+    "Казвам: „Нека първо уточним какво трябва да има в крайния резултат.“"
+  ]],
+  ["Групата ви обсъжда решение. Един човек говори почти през цялото време, а двама други само кимат и не казват нищо. Фасилитаторът минава покрай масата и казва, че имате още 8 минути. Как реагираш най-естествено?", [
+    "Прекъсвам учтиво и връщам групата към това какво трябва да решим.",
+    "Включвам се с енергия, за да раздвижа разговора и да не зацикляме.",
+    "Обръщам се към по-тихите хора и ги питам какво мислят.",
+    "Опитвам да обобщя какво е казано дотук и кое е факт, а кое мнение."
+  ]],
+  ["Работите по задача, в която трябва да измислите нестандартно представяне. Някой предлага много шантава идея. Част от групата се смее и се оживява, но друг човек казва: „Това няма да стане.“ Какво правиш първо?", [
+    "Казвам: „Ако ще я правим, да решим как точно и да действаме.“",
+    "Подхващам идеята и добавям още нещо, за да стане по-силна.",
+    "Проверявам дали групата се чувства комфортно с такава посока.",
+    "Питам как можем да проверим дали идеята е реалистична."
+  ]],
+  ["Фасилитаторът ви дава задача, но инструкцията е леко неясна. Един човек я разбира по един начин, друг — по съвсем различен. Започва спор какво всъщност се иска. Какво най-вероятно правиш?", [
+    "Предлагам практична интерпретация и казвам да започнем по нея.",
+    "Предлагам да съберем няколко идеи и после да изберем най-интересната.",
+    "Опитвам да успокоя разговора, за да не стане излишно напрежение.",
+    "Питам какъв точно трябва да е крайният резултат и по какви критерии ще се гледа."
+  ]],
+  ["Групата ви трябва да построи нещо с ограничени материали — хартия, тиксо и маркери. Имате две идеи: едната е лесна и бърза, другата е по-впечатляваща, но по-рискована. Остават 12 минути. Какво казваш?", [
+    "„Да вземем по-бързия вариант и да го направим добре.“",
+    "„По-рискованият вариант ще е много по-запомнящ се.“",
+    "„Кой вариант ще е най-комфортен за всички да изпълним?“",
+    "„Нека сравним риска, времето и шанса да го завършим.“"
+  ]],
+  ["По време на упражнение двама души от групата започват да спорят. Единият иска да се действа веднага, другият настоява, че планът е слаб. Останалите започват да мълчат. Какво правиш първо?", [
+    "Назовавам проблема и предлагам бързо решение как да продължим.",
+    "Опитвам да сменя енергията и да върна групата към общата цел.",
+    "Опитвам да чуя и двете страни, за да спадне напрежението.",
+    "Опитвам да разбера какво точно в плана се смята за слабо."
+  ]],
+  ["Групата ви има идея, но става ясно, че няма да успеете да я изпълните цялата. Остават 6 минути. Някой казва: „Май няма смисъл, няма да стане.“ Какво най-вероятно предлагаш?", [
+    "Да направим най-важната част и да я покажем като завършен минимум.",
+    "Да я представим по-атрактивно, дори да не е перфектна.",
+    "Да видим кой с какво може да помогне, за да не се отказваме.",
+    "Да намалим обхвата, така че поне това, което покажем, да е качествено."
+  ]],
+  ["След работа по групова задача трябва да представите резултата си пред всички. Никой не е сигурен кой какво да каже. Имате 3 минути да се подготвите. Коя роля най-естествено поемаш?", [
+    "Да кажа ясно какво сме решили и защо това е нашият избор.",
+    "Да направя представянето живо, забавно и запомнящо се.",
+    "Да се уверя, че приносът на хората в групата се вижда.",
+    "Да подредя структурата, аргументите и последователността."
+  ]],
+  ["В задачата трябва да изберете само една идея, но групата обсъжда детайли вече твърде дълго. Някой започва да отваря още нови варианти. Времето напредва. Какво правиш?", [
+    "Казвам: „Стига обсъждане, трябва да изберем и да действаме.“",
+    "Предлагам по-смел вариант, за да излезем от скучния цикъл.",
+    "Питам дали всички са готови да продължим с една от опциите.",
+    "Питам кои детайли наистина са критични за решението."
+  ]],
+  ["Групата ви представя идея вътрешно, преди да я покаже на останалите. Един човек казва: „Това няма да ги впечатли.“ Настъпва кратко мълчание. Каква е първата ти реакция?", [
+    "Питам: „Какво трябва да променим, за да стане по-силно?“",
+    "Опитвам да обърна коментара в по-позитивна и креативна посока.",
+    "Питам какво точно го притеснява, за да не го отхвърлим веднага.",
+    "Питам на какво основание смята, че няма да сработи."
+  ]],
+  ["На масата има 6 различни идеи, написани на листчета. Всички изглеждат донякъде добри, но никой не иска да отстъпи от своята. Фасилитаторът казва: „Изберете една.“ Какво правиш?", [
+    "Предлагам бързо гласуване или избор на една идея, за да продължим.",
+    "Избирам идеята, която носи най-много енергия и настроение.",
+    "Търся вариант, с който най-много хора могат да се съгласят.",
+    "Предлагам 2–3 критерия, по които да сравним идеите."
+  ]],
+  ["Получавате задача да измислите решение за измислен клиент. Един човек иска да направите нещо просто, друг иска нещо много креативно, трети се притеснява, че няма време. Ти какво правиш най-естествено?", [
+    "Избирам най-директния път към работещ резултат.",
+    "Подкрепям по-креативния подход, ако ще направи задачата по-интересна.",
+    "Търся подход, който няма да стресира групата излишно.",
+    "Търся подхода с най-малко неясноти и риск от грешка."
+  ]],
+  ["В последните минути някой предлага да смените цялата посока, защото новата идея звучи по-добре. Част от групата се колебае, част се ентусиазира. Как реагираш?", [
+    "Питам дали промяната реално ще даде по-добър резултат и решаваме бързо.",
+    "Харесва ми, ако новата посока ще направи представянето по-силно.",
+    "Проверявам дали групата е спокойна с такава промяна в последния момент.",
+    "Питам какви са последствията и какво ще трябва да преработим."
+  ]],
+  ["Докато работите, забелязваш, че един човек от групата изглежда объркан. Той гледа задачата, но не се включва. Другите са заети и не му обръщат внимание. Какво най-вероятно правиш?", [
+    "Давам му конкретна малка задача, за да се включи веднага.",
+    "Опитвам да го въвлека с лек въпрос или шега.",
+    "Питам го спокойно какво мисли и дали има нужда от помощ.",
+    "Опитвам да разбера къде точно се е изгубил в задачата."
+  ]],
+  ["Крайният резултат е почти готов, но не е идеален. Остават 2 минути. Един човек иска още да го пипате, друг казва да приключвате. Какво казваш?", [
+    "„Достатъчно добро е. Да го покажем.“",
+    "„Да го представим така, че да има ефект.“",
+    "„Важно е всички да сме ок с това, което показваме.“",
+    "„Нека проверим дали няма очевидни пропуски.“"
+  ]],
+  ["Представи си, че си в групова задача с хора, които не познаваш много добре. Има ограничено време, различни мнения и очакване накрая да покажете резултат. Кое изречение най-много прилича на първия ти импулс?", [
+    "„Да решим и да действаме.“",
+    "„Да го направим живо и интересно.“",
+    "„Да го направим спокойно и заедно.“",
+    "„Да го направим правилно и обмислено.“"
+  ]],
 ];
 
 const ITEMS = RAW_ITEMS.map(([scenario, texts], idx) => ({
@@ -104,9 +184,9 @@ const TIE_TEXTS = {
 };
 
 const TIE_SCENARIOS = [
-  "Когато трябва да помогна на екипа да излезе от застой, по-естествено ми е…",
-  "Когато има спор как да продължим, първият ми импулс е…",
-  "Когато времето е малко, най-много ми идва да…",
+  "Остават последните 5 минути от групова задача. Имате недовършен резултат, няколко различни мнения и нужда да излезете с нещо пред останалите. Какъв е първият ти импулс?",
+  "В средата на упражнение двама души дърпат групата в различни посоки. Единият иска да се действа, другият иска още да се мисли. Останалите чакат. Какво ти идва най-естествено?",
+  "Фасилитаторът казва: „Имате още 3 минути.“ Групата още не е напълно готова и усещаш напрежение на масата. Какво най-вероятно правиш?",
 ];
 
 function getTieQuestions(pair) {
@@ -308,11 +388,11 @@ function ColorDots() {
 }
 
 function TestIntro({ name, setName, start, openAdmin }) {
-  return <Page center><Card className="relative w-full max-w-4xl overflow-hidden p-8 md:p-12"><div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-red-100 blur-2xl" /><div className="absolute -bottom-24 left-20 h-72 w-72 rounded-full bg-blue-100 blur-2xl" /><div className="relative"><div className="flex items-center justify-between gap-4"><div className="rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white">Team style check</div><Button variant="secondary" onClick={openAdmin}>Admin</Button></div><div className="mt-10 grid gap-8 md:grid-cols-[1.2fr_0.8fr] md:items-end"><div><ColorDots /><h1 className="mt-6 text-5xl font-black tracking-tight text-slate-950 md:text-7xl">Ами ако никой не е идиот?</h1><p className="mt-5 text-xl leading-relaxed text-slate-600">Понякога „идиот“ е просто човек с различен стил от нашия. Нека видим какъв е твоят.</p></div><div className="rounded-3xl bg-slate-950 p-5 text-white shadow-lg"><div className="text-sm uppercase tracking-[0.18em] text-slate-400">Как работи</div><div className="mt-4 space-y-3 text-sm text-slate-200"><div>1. Минаваш през 16 ситуации.</div><div>2. За всяка ситуация избираш една реакция, която най-много прилича на теб.</div><div>3. Ако резултатът е близък, ще има още 3 бързи уточняващи ситуации.</div><div>4. Виждаш само своя цвят за играта.</div></div></div></div><div className="mt-8 grid gap-4 md:grid-cols-[1fr_auto]"><Input label="Име" value={name} onChange={setName} placeholder="например: Светослав" /><div className="flex items-end"><Button disabled={!name.trim()} onClick={start} className="w-full px-6 py-4 text-base md:w-auto">Продължи ›</Button></div></div><div className="mt-5 rounded-2xl bg-slate-100 p-4 text-sm text-slate-600">Няма правилни и грешни отговори. На всяка ситуация избери само една реакция — тази, която най-много прилича на теб.</div></div></Card></Page>;
+  return <Page center><Card className="relative w-full max-w-4xl overflow-hidden p-8 md:p-12"><div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-red-100 blur-2xl" /><div className="absolute -bottom-24 left-20 h-72 w-72 rounded-full bg-blue-100 blur-2xl" /><div className="relative"><div className="flex items-center justify-between gap-4"><div className="rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-white">Team style check</div><Button variant="secondary" onClick={openAdmin}>Admin</Button></div><div className="mt-10 grid gap-8 md:grid-cols-[1.2fr_0.8fr] md:items-end"><div><ColorDots /><h1 className="mt-6 text-5xl font-black tracking-tight text-slate-950 md:text-7xl">Ами ако никой не е идиот?</h1><p className="mt-5 text-xl leading-relaxed text-slate-600">Понякога „идиот“ е просто човек с различен стил от нашия. Нека видим какъв е твоят.</p></div><div className="rounded-3xl bg-slate-950 p-5 text-white shadow-lg"><div className="text-sm uppercase tracking-[0.18em] text-slate-400">Как работи</div><div className="mt-4 space-y-3 text-sm text-slate-200"><div>1. Минаваш през 16 кратки екипни сцени.</div><div>2. За всяка сцена избираш първата реакция, която най-много прилича на теб.</div><div>3. Ако резултатът е близък, ще има още 3 бързи уточняващи ситуации.</div><div>4. Виждаш само своя цвят за играта.</div></div></div></div><div className="mt-8 grid gap-4 md:grid-cols-[1fr_auto]"><Input label="Име" value={name} onChange={setName} placeholder="например: Светослав" /><div className="flex items-end"><Button disabled={!name.trim()} onClick={start} className="w-full px-6 py-4 text-base md:w-auto">Продължи ›</Button></div></div><div className="mt-5 rounded-2xl bg-slate-100 p-4 text-sm text-slate-600">Няма правилни и грешни отговори. Представи си, че си в сцената, и избери реакцията, която най-много прилича на първия ти импулс.</div></div></Card></Page>;
 }
 
 function HowUsed({ onBack, onStart }) {
-  return <Page center><Card className="w-full max-w-3xl p-8 md:p-10"><div className="inline-flex rounded-full bg-slate-950 px-4 py-2 text-sm text-white">Преди да започнеш</div><h1 className="mt-6 text-3xl font-semibold text-slate-950 md:text-4xl">Как ще използваме резултата?</h1><div className="mt-6 grid gap-4"><div className="rounded-2xl bg-slate-50 p-4 text-slate-700">Това не е психологическа диагноза и не е оценка на личността.</div><div className="rounded-2xl bg-slate-50 p-4 text-slate-700">Цветът е игрови ориентир за това как най-често реагираш в екипни ситуации.</div><div className="rounded-2xl bg-slate-50 p-4 text-slate-700">Ще го използваме по време на тиймбилдинга, за да видим как различните стилове влияят на комуникацията.</div></div><p className="mt-6 text-sm leading-relaxed text-slate-500">Отговаряй интуитивно. Ако мислиш твърде дълго, вероятно вече започваш да рационализираш.</p><div className="mt-8 flex flex-col-reverse justify-between gap-3 sm:flex-row"><Button variant="secondary" onClick={onBack}>Назад</Button><Button onClick={onStart} className="px-6 py-3 text-base">Започни ситуациите ›</Button></div></Card></Page>;
+  return <Page center><Card className="w-full max-w-3xl p-8 md:p-10"><div className="inline-flex rounded-full bg-slate-950 px-4 py-2 text-sm text-white">Преди да започнеш</div><h1 className="mt-6 text-3xl font-semibold text-slate-950 md:text-4xl">Как ще използваме резултата?</h1><div className="mt-6 grid gap-4"><div className="rounded-2xl bg-slate-50 p-4 text-slate-700">Това не е психологическа диагноза и не е оценка на личността.</div><div className="rounded-2xl bg-slate-50 p-4 text-slate-700">Цветът е игрови ориентир за това как най-често реагираш в екипни ситуации.</div><div className="rounded-2xl bg-slate-50 p-4 text-slate-700">Ще го използваме по време на тиймбилдинга, за да видим как различните стилове влияят на комуникацията.</div></div><p className="mt-6 text-sm leading-relaxed text-slate-500">Отговаряй интуитивно. Не избирай идеалната реакция, а тази, която най-вероятно би направил/а в такъв момент.</p><div className="mt-8 flex flex-col-reverse justify-between gap-3 sm:flex-row"><Button variant="secondary" onClick={onBack}>Назад</Button><Button onClick={onStart} className="px-6 py-3 text-base">Започни ситуациите ›</Button></div></Card></Page>;
 }
 
 function TestStep({ current, answers, choose, back, next, isLast }) {
@@ -320,7 +400,7 @@ function TestStep({ current, answers, choose, back, next, isLast }) {
   const progress = Math.round(((current + 1) / ITEMS.length) * 100);
   const canContinue = Boolean(answer);
   const item = ITEMS[current];
-  return <Page center><Card className="w-full max-w-5xl p-6 md:p-10"><div className="mb-8"><div className="mb-3 flex items-center justify-between text-sm text-slate-500"><span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600">Ситуация {current + 1} от {ITEMS.length}</span><span>{progress}%</span></div><div className="h-3 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-slate-950 transition-all" style={{ width: `${progress}%` }} /></div></div><div className="mb-7 rounded-3xl bg-slate-950 p-6 text-white md:p-8"><div className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-slate-300">Екипна ситуация</div><h2 className="text-2xl font-semibold leading-tight md:text-4xl">{item.scenario}</h2><p className="mt-4 max-w-3xl text-sm leading-relaxed text-slate-300 md:text-base">Избери една реакция — тази, която най-много прилича на теб. Можеш да се връщаш назад — изборите ти се запазват.</p><div className="mt-4 inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-slate-300">Само един избор на ситуация</div></div><div className="grid gap-4 md:grid-cols-2">{item.options.map((option) => { const selected = answer?.id === option.id; const color = COLORS[option.type]; return <div key={option.id} onClick={() => choose(option)} className={`relative min-h-[160px] cursor-pointer rounded-3xl border p-5 transition ${selected ? `${color.soft} ${color.border} shadow-md ring-4 ${color.ring}` : "border-slate-200 bg-white text-slate-900 hover:border-slate-400 hover:shadow-sm"}`}>{selected && <div className={`absolute right-4 top-4 rounded-full bg-white px-3 py-1 text-xs font-bold ${color.text}`}>✓ Избрано</div>}<div className="pr-20 text-lg font-semibold leading-relaxed md:text-xl">{option.text}</div><div className="absolute bottom-5 left-5 right-5"><Button variant={selected ? "primary" : "secondary"} className="w-full" onClick={(event) => { event.stopPropagation(); choose(option); }}>{selected ? "Избрано" : "Това съм аз"}</Button></div></div>; })}</div><div className="mt-8 flex flex-col-reverse justify-between gap-3 sm:flex-row"><Button variant="secondary" disabled={current === 0} onClick={back}>‹ Предходна ситуация</Button><Button disabled={!canContinue} onClick={next} className="px-6 py-3 text-base">{!canContinue ? "Избери една реакция" : isLast ? "Продължи" : "Следваща ситуация ›"}</Button></div></Card></Page>;
+  return <Page center><Card className="w-full max-w-5xl p-6 md:p-10"><div className="mb-8"><div className="mb-3 flex items-center justify-between text-sm text-slate-500"><span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600">Сцена {current + 1} от {ITEMS.length}</span><span>{progress}%</span></div><div className="h-3 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-slate-950 transition-all" style={{ width: `${progress}%` }} /></div></div><div className="mb-7 rounded-3xl bg-slate-950 p-6 text-white md:p-8"><div className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-slate-300">Екипна ситуация</div><h2 className="text-2xl font-semibold leading-tight md:text-4xl">{item.scenario}</h2><p className="mt-4 max-w-3xl text-sm leading-relaxed text-slate-300 md:text-base">Представи си, че си в тази сцена. Не търси идеалния отговор. Избери първата реакция, която най-много прилича на теб в такъв момент. Можеш да се връщаш назад — изборите ти се запазват.</p><div className="mt-4 inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-slate-300">Само един избор на сцена</div></div><div className="grid gap-4 md:grid-cols-2">{item.options.map((option) => { const selected = answer?.id === option.id; const color = COLORS[option.type]; return <div key={option.id} onClick={() => choose(option)} className={`relative min-h-[160px] cursor-pointer rounded-3xl border p-5 transition ${selected ? "border-slate-400 bg-slate-100 text-slate-950 shadow-md ring-4 ring-slate-200" : "border-slate-200 bg-white text-slate-900 hover:border-slate-400 hover:shadow-sm"}`}>{selected && <div className="absolute right-4 top-4 rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-700">✓ Избрано</div>}<div className="pr-20 text-lg font-semibold leading-relaxed md:text-xl">{option.text}</div><div className="absolute bottom-5 left-5 right-5"><Button variant={selected ? "primary" : "secondary"} className="w-full" onClick={(event) => { event.stopPropagation(); choose(option); }}>{selected ? "Избрано" : "Това съм аз"}</Button></div></div>; })}</div><div className="mt-8 flex flex-col-reverse justify-between gap-3 sm:flex-row"><Button variant="secondary" disabled={current === 0} onClick={back}>‹ Предходна ситуация</Button><Button disabled={!canContinue} onClick={next} className="px-6 py-3 text-base">{!canContinue ? "Избери една реакция" : isLast ? "Продължи" : "Следваща ситуация ›"}</Button></div></Card></Page>;
 }
 
 function TieBreakerStep({ pair, current, answers, choose, back, next, isLast }) {
@@ -329,7 +409,7 @@ function TieBreakerStep({ pair, current, answers, choose, back, next, isLast }) 
   const answer = answers[current] || null;
   const canContinue = Boolean(answer);
   const progress = Math.round(((current + 1) / questions.length) * 100);
-  return <Page center><Card className="w-full max-w-4xl p-6 md:p-10"><div className="mb-8"><div className="mb-3 flex items-center justify-between text-sm text-slate-500"><span className="rounded-full bg-amber-100 px-3 py-1 font-medium text-amber-800">Уточняване {current + 1} от {questions.length}</span><span>{progress}%</span></div><div className="h-3 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-amber-500 transition-all" style={{ width: `${progress}%` }} /></div></div><div className="mb-7 rounded-3xl bg-slate-950 p-6 text-white md:p-8"><div className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-amber-300">Близък резултат</div><h2 className="text-2xl font-semibold leading-tight md:text-4xl">{item.scenario}</h2><p className="mt-4 text-sm leading-relaxed text-slate-300 md:text-base">Имаш близък резултат между {COLORS[pair[0]].short} и {COLORS[pair[1]].short}. Избери кое е по-естествено за теб.</p></div><div className="grid gap-4 md:grid-cols-2">{item.options.map((option) => { const selected = answer?.id === option.id; const color = COLORS[option.type]; return <div key={option.id} onClick={() => choose(option)} className={`relative min-h-[170px] cursor-pointer rounded-3xl border p-5 transition ${selected ? `${color.soft} ${color.border} shadow-md ring-4 ${color.ring}` : "border-slate-200 bg-white text-slate-900 hover:border-slate-400 hover:shadow-sm"}`}><div className={`mb-4 inline-flex rounded-full px-3 py-1 text-sm font-semibold ${color.soft} ${color.text}`}>{color.emoji} {color.short}</div>{selected && <div className={`absolute right-4 top-4 rounded-full bg-white px-3 py-1 text-xs font-bold ${color.text}`}>✓ Избрано</div>}<div className="text-lg font-semibold leading-relaxed md:text-xl">{option.text}</div></div>; })}</div><div className="mt-8 flex flex-col-reverse justify-between gap-3 sm:flex-row"><Button variant="secondary" onClick={back}>{current === 0 ? "Назад към теста" : "‹ Предходно уточняване"}</Button><Button disabled={!canContinue} onClick={next} className="px-6 py-3 text-base">{!canContinue ? "Избери една реакция" : isLast ? "Покажи цвета" : "Следващо уточняване ›"}</Button></div></Card></Page>;
+  return <Page center><Card className="w-full max-w-4xl p-6 md:p-10"><div className="mb-8"><div className="mb-3 flex items-center justify-between text-sm text-slate-500"><span className="rounded-full bg-amber-100 px-3 py-1 font-medium text-amber-800">Уточняване {current + 1} от {questions.length}</span><span>{progress}%</span></div><div className="h-3 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-amber-500 transition-all" style={{ width: `${progress}%` }} /></div></div><div className="mb-7 rounded-3xl bg-slate-950 p-6 text-white md:p-8"><div className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-amber-300">Близък резултат</div><h2 className="text-2xl font-semibold leading-tight md:text-4xl">{item.scenario}</h2><p className="mt-4 text-sm leading-relaxed text-slate-300 md:text-base">Имаш близък резултат. Представи си сцената и избери кое е по-естествено за теб, без да мислиш прекалено дълго.</p></div><div className="grid gap-4 md:grid-cols-2">{item.options.map((option) => { const selected = answer?.id === option.id; const color = COLORS[option.type]; return <div key={option.id} onClick={() => choose(option)} className={`relative min-h-[170px] cursor-pointer rounded-3xl border p-5 transition ${selected ? "border-slate-400 bg-slate-100 text-slate-950 shadow-md ring-4 ring-slate-200" : "border-slate-200 bg-white text-slate-900 hover:border-slate-400 hover:shadow-sm"}`}><div className="mb-4 inline-flex rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600">Вариант</div>{selected && <div className="absolute right-4 top-4 rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-700">✓ Избрано</div>}<div className="text-lg font-semibold leading-relaxed md:text-xl">{option.text}</div></div>; })}</div><div className="mt-8 flex flex-col-reverse justify-between gap-3 sm:flex-row"><Button variant="secondary" onClick={back}>{current === 0 ? "Назад към теста" : "‹ Предходно уточняване"}</Button><Button disabled={!canContinue} onClick={next} className="px-6 py-3 text-base">{!canContinue ? "Избери една реакция" : isLast ? "Покажи цвета" : "Следващо уточняване ›"}</Button></div></Card></Page>;
 }
 
 function Result({ name, result, restart, openAdmin }) {
