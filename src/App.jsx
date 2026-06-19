@@ -404,7 +404,7 @@ function TestStep({ current, answers, choose, back, next, isLast }) {
 
   return (
     <Page center>
-      <Card className="w-full max-w-5xl border-slate-200/80 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)] md:p-8">
+      <Card className="w-full max-w-5xl border-slate-200/80 bg-white p-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] md:p-6">
         <div className="mb-6">
           <div className="mb-3 flex items-center justify-between text-sm text-slate-500">
             <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600">
@@ -417,8 +417,8 @@ function TestStep({ current, answers, choose, back, next, isLast }) {
           </div>
         </div>
 
-        <div className="mb-6 rounded-[32px] border border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-5 text-white shadow-[0_18px_40px_rgba(15,23,42,0.28)] md:p-6">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="mb-5 rounded-[28px] border border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-4 text-white shadow-[0_18px_40px_rgba(15,23,42,0.28)] md:p-5">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <div className="inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-200">
               Екипна ситуация
             </div>
@@ -427,11 +427,11 @@ function TestStep({ current, answers, choose, back, next, isLast }) {
             </div>
           </div>
 
-          <h2 className="max-w-4xl text-xl font-semibold leading-snug md:text-2xl lg:text-[30px]">
+          <h2 className="max-w-none text-lg font-semibold leading-tight md:text-xl lg:text-[24px]">
             {item.scenario}
           </h2>
 
-          <p className="mt-4 max-w-3xl text-sm leading-relaxed text-slate-300 md:text-[15px]">
+          <p className="mt-3 max-w-4xl text-[13px] leading-relaxed text-slate-300 md:text-sm">
             Представи си, че си в тази сцена. Не търси идеалния отговор. Избери първата реакция, която най-много прилича на теб в такъв момент.
           </p>
         </div>
@@ -519,8 +519,8 @@ function TieBreakerStep({ pair, current, answers, choose, back, next, isLast }) 
           </div>
         </div>
 
-        <div className="mb-6 rounded-[32px] border border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-5 text-white shadow-[0_18px_40px_rgba(15,23,42,0.28)] md:p-6">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="mb-5 rounded-[28px] border border-slate-800 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-4 text-white shadow-[0_18px_40px_rgba(15,23,42,0.28)] md:p-5">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <div className="inline-flex rounded-full bg-amber-400/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-amber-200">
               Близък резултат
             </div>
@@ -529,11 +529,11 @@ function TieBreakerStep({ pair, current, answers, choose, back, next, isLast }) 
             </div>
           </div>
 
-          <h2 className="max-w-4xl text-xl font-semibold leading-snug md:text-2xl lg:text-[30px]">
+          <h2 className="max-w-none text-lg font-semibold leading-tight md:text-xl lg:text-[24px]">
             {item.scenario}
           </h2>
 
-          <p className="mt-4 max-w-3xl text-sm leading-relaxed text-slate-300 md:text-[15px]">
+          <p className="mt-3 max-w-4xl text-[13px] leading-relaxed text-slate-300 md:text-sm">
             Имаш близък резултат. Избери кое е по-естествено за теб, без да мислиш прекалено дълго.
           </p>
         </div>
